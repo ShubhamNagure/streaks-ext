@@ -44,7 +44,7 @@ function renderHeatmap(topic, container) {
     const history = new Set(data[`history_${topic}`] || []);
     const today = new Date();
 
-    for (let i = 83; i >= 0; i--) {
+    for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const iso = date.toISOString().split('T')[0];
@@ -65,9 +65,14 @@ function renderTopic(topic) {
   const container = document.getElementById("streakContainer");
   const div = document.createElement("div");
   div.className = "streakBox";
+  div.id = `box-${topic}`;
   div.innerHTML = `
-    <div class="streakTitle">${topic.charAt(0).toUpperCase() + topic.slice(1)} Streak:</div>
+    <div class="streakTitle">
+      ${topic.charAt(0).toUpperCase() + topic.slice(1)} Streak:
+      <button style="float:right; background:none; border:none; color:#e74c3c; cursor:pointer;" title="Delete ${topic}" id="delete-${topic}">🗑️</button>
+    </div>
     <div id="streak-${topic}" class="streak">0 days</div>
+    <div id="extra-${topic}" style="font-size: 0.9em; color: #555;"></div>
   `;
 
   const button = document.createElement("button");
@@ -84,10 +89,45 @@ function renderTopic(topic) {
   container.appendChild(div);
 
   const streakKey = `streak_${topic}`;
-  chrome.storage.local.get([streakKey], (data) => {
-    document.getElementById(`streak-${topic}`).textContent = `${data[streakKey] || 0} days`;
+  const dateKey = `lastMarkedDate_${topic}`;
+  const historyKey = `history_${topic}`;
+
+  chrome.storage.local.get([streakKey, dateKey, historyKey], (data) => {
+    const streak = data[streakKey] || 0;
+    const lastMarked = data[dateKey] || "N/A";
+    const history = new Set(data[historyKey] || []);
+    document.getElementById(`streak-${topic}`).textContent = `${streak} days`;
+
+    const extraInfo = `
+      <div>Total Active Days: ${history.size}</div>
+      <div>Last Marked: ${lastMarked}</div>
+    `;
+    document.getElementById(`extra-${topic}`).innerHTML = extraInfo;
+  });
+
+  // Handle delete
+  document.getElementById(`delete-${topic}`).addEventListener("click", () => deleteTopic(topic));
+}
+
+function deleteTopic(topic) {
+  if (!confirm(`Are you sure you want to delete "${topic}"?`)) return;
+
+  const streakKey = `streak_${topic}`;
+  const dateKey = `lastMarkedDate_${topic}`;
+  const historyKey = `history_${topic}`;
+
+  chrome.storage.local.get(["topics"], (data) => {
+    let topics = data.topics || [];
+    topics = topics.filter(t => t !== topic);
+
+    chrome.storage.local.remove([streakKey, dateKey, historyKey], () => {
+      chrome.storage.local.set({ topics }, () => {
+        document.getElementById(`box-${topic}`).remove();
+      });
+    });
   });
 }
+
 
 function loadTopics() {
   chrome.storage.local.get(["topics"], (data) => {

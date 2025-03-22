@@ -10,8 +10,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     chrome.notifications.create({
       type: "basic",
       iconUrl: "icon.png",
-      title: "Spring Boot Learning",
-      message: "Don’t forget to mark your Spring Boot progress today!",
+      title: "Learning Reminder",
+      message: "Don't forget to mark your learning progress today!",
       priority: 2
     });
   }

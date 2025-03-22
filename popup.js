@@ -1,12 +1,14 @@
-document.getElementById("markDone").addEventListener("click", () => {
+function markDone(topic) {
   const today = new Date().toDateString();
+  const streakKey = `streak_${topic}`;
+  const dateKey = `lastMarkedDate_${topic}`;
 
-  chrome.storage.local.get(["lastMarkedDate", "streak"], (data) => {
-    let streak = data.streak || 0;
-    const lastDate = data.lastMarkedDate;
+  chrome.storage.local.get([streakKey, dateKey], (data) => {
+    let streak = data[streakKey] || 0;
+    const lastDate = data[dateKey];
 
     if (lastDate === today) {
-      alert("You already marked today!");
+      alert(`You already marked ${topic} today!`);
       return;
     }
 
@@ -16,11 +18,61 @@ document.getElementById("markDone").addEventListener("click", () => {
       streak = 1;
     }
 
-    chrome.storage.local.set({ lastMarkedDate: today, streak });
-    document.getElementById("streak").textContent = `${streak} days`;
+    chrome.storage.local.set({ [streakKey]: streak, [dateKey]: today }, () => {
+      document.getElementById(`streak-${topic}`).textContent = `${streak} days`;
+    });
   });
-});
+}
 
-chrome.storage.local.get("streak", (data) => {
-  document.getElementById("streak").textContent = `${data.streak || 0} days`;
-});
+function renderTopic(topic) {
+  const container = document.getElementById("streakContainer");
+  const div = document.createElement("div");
+  div.className = "streakBox";
+  div.innerHTML = `
+    <div class="streakTitle">${topic.charAt(0).toUpperCase() + topic.slice(1)} Streak:</div>
+    <div id="streak-${topic}" class="streak">0 days</div>
+  `;
+
+  const button = document.createElement("button");
+  button.className = "markButton";
+  button.textContent = `✅ Mark ${topic}`;
+  button.addEventListener("click", () => markDone(topic));
+  div.appendChild(button);
+
+  container.appendChild(div);
+
+  const streakKey = `streak_${topic}`;
+  chrome.storage.local.get([streakKey], (data) => {
+    document.getElementById(`streak-${topic}`).textContent = `${data[streakKey] || 0} days`;
+  });
+}
+
+function loadTopics() {
+  chrome.storage.local.get(["topics"], (data) => {
+    const topics = data.topics || ["java", "rest", "go"];
+    topics.forEach(renderTopic);
+  });
+}
+
+function addTopic() {
+  const input = document.getElementById("newTopicInput");
+  const topic = input.value.trim().toLowerCase();
+  if (!topic) return;
+
+  chrome.storage.local.get(["topics"], (data) => {
+    let topics = data.topics || [];
+    if (!topics.includes(topic)) {
+      topics.push(topic);
+      chrome.storage.local.set({ topics }, () => {
+        renderTopic(topic);
+        input.value = "";
+      });
+    } else {
+      alert("Topic already exists.");
+    }
+  });
+}
+
+document.getElementById("addTopicButton").addEventListener("click", addTopic);
+
+loadTopics();

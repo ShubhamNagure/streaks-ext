@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -13,49 +12,65 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-width: 250px;
+      justify-content: flex-start;
+      min-width: 280px;
     }
     h1 {
       color: #2c3e50;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
     }
-    #streakBox {
+    .streakBox {
       background: #ffffff;
       border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      padding: 20px;
+      padding: 15px;
       margin-bottom: 15px;
       text-align: center;
       width: 100%;
     }
-    #streak {
-      font-size: 2.5em;
-      color: #27ae60;
+    .streakTitle {
       font-weight: bold;
     }
-    button {
-      padding: 10px 20px;
+    .streak {
+      font-size: 1.8em;
+      color: #27ae60;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .markButton {
+      padding: 8px 15px;
       background-color: #2980b9;
       color: white;
       border: none;
       border-radius: 6px;
-      font-size: 1em;
+      font-size: 0.9em;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    button:hover {
+    .markButton:hover {
       background-color: #1c5980;
+    }
+    #addTopic {
+      margin-top: 20px;
+      display: flex;
+      width: 100%;
+      gap: 8px;
+    }
+    #addTopic input {
+      flex-grow: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>🌱 Spring Boot Streak</h1>
-  <div id="streakBox">
-    <div>Current Streak:</div>
-    <div id="streak">0 days</div>
+  <h1>📚 Learning Streaks</h1>
+  <div id="streakContainer"></div>
+  <div id="addTopic">
+    <input type="text" id="newTopicInput" placeholder="Add new topic..." />
+    <button class="markButton" id="addTopicButton">➕</button>
   </div>
-  <button id="markDone">✅ Mark as Done Today</button>
   <script src="popup.js"></script>
 </body>
 </html>

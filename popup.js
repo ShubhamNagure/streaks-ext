@@ -51,6 +51,7 @@ function renderHeatmap(topic, container) {
 
       const cell = document.createElement("div");
       cell.className = "heatmap-cell";
+      cell.title = iso; // Tooltip showing date
       if (history.has(iso)) cell.classList.add("marked");
 
       grid.appendChild(cell);

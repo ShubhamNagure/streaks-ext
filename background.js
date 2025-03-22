@@ -1,7 +1,7 @@
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create("dailyReminder", {
-    when: Date.now() + 5000, // First reminder after 5 seconds for testing
-    periodInMinutes: 1440 // 24 hours
+    when: Date.now() + 5000,
+    periodInMinutes: 1440
   });
 });
 

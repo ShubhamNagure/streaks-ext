@@ -1,13 +1,16 @@
 function markDone(topic) {
-  const today = new Date().toDateString();
+  const today = new Date();
+  const dateStr = today.toISOString().split('T')[0];
   const streakKey = `streak_${topic}`;
   const dateKey = `lastMarkedDate_${topic}`;
+  const historyKey = `history_${topic}`;
 
-  chrome.storage.local.get([streakKey, dateKey], (data) => {
+  chrome.storage.local.get([streakKey, dateKey, historyKey], (data) => {
     let streak = data[streakKey] || 0;
     const lastDate = data[dateKey];
+    let history = new Set(data[historyKey] || []);
 
-    if (lastDate === today) {
+    if (lastDate === today.toDateString()) {
       alert(`You already marked ${topic} today!`);
       return;
     }
@@ -18,9 +21,42 @@ function markDone(topic) {
       streak = 1;
     }
 
-    chrome.storage.local.set({ [streakKey]: streak, [dateKey]: today }, () => {
+    history.add(dateStr);
+    const historyArray = Array.from(history);
+
+    chrome.storage.local.set({
+      [streakKey]: streak,
+      [dateKey]: today.toDateString(),
+      [historyKey]: historyArray
+    }, () => {
       document.getElementById(`streak-${topic}`).textContent = `${streak} days`;
+      renderHeatmap(topic, document.getElementById(`heatmap-${topic}`));
     });
+  });
+}
+
+function renderHeatmap(topic, container) {
+  container.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.className = "heatmap";
+
+  chrome.storage.local.get([`history_${topic}`], (data) => {
+    const history = new Set(data[`history_${topic}`] || []);
+    const today = new Date();
+
+    for (let i = 83; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const iso = date.toISOString().split('T')[0];
+
+      const cell = document.createElement("div");
+      cell.className = "heatmap-cell";
+      if (history.has(iso)) cell.classList.add("marked");
+
+      grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
   });
 }
 
@@ -38,6 +74,11 @@ function renderTopic(topic) {
   button.textContent = `✅ Mark ${topic}`;
   button.addEventListener("click", () => markDone(topic));
   div.appendChild(button);
+
+  const heatmapSection = document.createElement("div");
+  heatmapSection.id = `heatmap-${topic}`;
+  renderHeatmap(topic, heatmapSection);
+  div.appendChild(heatmapSection);
 
   container.appendChild(div);
 

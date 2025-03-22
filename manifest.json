@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Learning Streak Tracker",
+  "version": "1.0",
+  "description": "Track your daily Spring Boot learning streaks with reminders.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "permissions": ["storage", "notifications", "alarms"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

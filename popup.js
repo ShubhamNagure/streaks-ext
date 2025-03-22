@@ -1,3 +1,17 @@
+// to make it tamperproof.
+const developerMode = false; // Set true only when testing manually
+if (!developerMode) {
+  try {
+    Object.freeze(chrome.storage.sync);
+  } catch (err) {
+    console.warn("Failed to freeze chrome.storage.sync (expected in some contexts)", err);
+  }
+}
+
+if (developerMode) {
+  document.getElementById("devBanner").style.display = "block";
+}
+
 function markDone(topic) {
   const today = new Date();
   const dateStr = today.toISOString().split('T')[0];
@@ -5,7 +19,7 @@ function markDone(topic) {
   const dateKey = `lastMarkedDate_${topic}`;
   const historyKey = `history_${topic}`;
 
-  chrome.storage.local.get([streakKey, dateKey, historyKey], (data) => {
+  chrome.storage.sync.get([streakKey, dateKey, historyKey], (data) => {
     let streak = data[streakKey] || 0;
     const lastDate = data[dateKey];
     let history = new Set(data[historyKey] || []);
@@ -24,7 +38,7 @@ function markDone(topic) {
     history.add(dateStr);
     const historyArray = Array.from(history);
 
-    chrome.storage.local.set({
+    chrome.storage.sync.set({
       [streakKey]: streak,
       [dateKey]: today.toDateString(),
       [historyKey]: historyArray
@@ -40,7 +54,7 @@ function renderHeatmap(topic, container) {
   const grid = document.createElement("div");
   grid.className = "heatmap";
 
-  chrome.storage.local.get([`history_${topic}`], (data) => {
+  chrome.storage.sync.get([`history_${topic}`], (data) => {
     const history = new Set(data[`history_${topic}`] || []);
     const today = new Date();
 
@@ -73,12 +87,16 @@ function renderTopic(topic) {
     </div>
     <div id="streak-${topic}" class="streak">0 days</div>
     <div id="extra-${topic}" style="font-size: 0.9em; color: #555;"></div>
+    <div id="integrity-${topic}" style="font-size: 0.85em; margin-top: 4px;"></div>
   `;
 
   const button = document.createElement("button");
   button.className = "markButton";
   button.textContent = `✅ Mark ${topic}`;
-  button.addEventListener("click", () => markDone(topic));
+  button.addEventListener("click", () => {
+    if (!developerMode) markDone(topic);
+    else alert("Developer mode is ON — manual streak modification allowed.");
+  });
   div.appendChild(button);
 
   const heatmapSection = document.createElement("div");
@@ -92,7 +110,7 @@ function renderTopic(topic) {
   const dateKey = `lastMarkedDate_${topic}`;
   const historyKey = `history_${topic}`;
 
-  chrome.storage.local.get([streakKey, dateKey, historyKey], (data) => {
+  chrome.storage.sync.get([streakKey, dateKey, historyKey], (data) => {
     const streak = data[streakKey] || 0;
     const lastMarked = data[dateKey] || "N/A";
     const history = new Set(data[historyKey] || []);
@@ -103,11 +121,20 @@ function renderTopic(topic) {
       <div>Last Marked: ${lastMarked}</div>
     `;
     document.getElementById(`extra-${topic}`).innerHTML = extraInfo;
+
+    // 🔐 Integrity Check
+    const integrityEl = document.getElementById(`integrity-${topic}`);
+    if (streak > history.size) {
+      integrityEl.innerHTML = `<span style="color: red;">❌ Tampered (streak > history)</span>`;
+    } else {
+      integrityEl.innerHTML = `<span style="color: green;">✅ Legit</span>`;
+    }
   });
 
-  // Handle delete
+  // Delete button
   document.getElementById(`delete-${topic}`).addEventListener("click", () => deleteTopic(topic));
 }
+
 
 function deleteTopic(topic) {
   if (!confirm(`Are you sure you want to delete "${topic}"?`)) return;
@@ -116,12 +143,12 @@ function deleteTopic(topic) {
   const dateKey = `lastMarkedDate_${topic}`;
   const historyKey = `history_${topic}`;
 
-  chrome.storage.local.get(["topics"], (data) => {
+  chrome.storage.sync.get(["topics"], (data) => {
     let topics = data.topics || [];
     topics = topics.filter(t => t !== topic);
 
-    chrome.storage.local.remove([streakKey, dateKey, historyKey], () => {
-      chrome.storage.local.set({ topics }, () => {
+    chrome.storage.sync.remove([streakKey, dateKey, historyKey], () => {
+      chrome.storage.sync.set({ topics }, () => {
         document.getElementById(`box-${topic}`).remove();
       });
     });
@@ -130,7 +157,7 @@ function deleteTopic(topic) {
 
 
 function loadTopics() {
-  chrome.storage.local.get(["topics"], (data) => {
+  chrome.storage.sync.get(["topics"], (data) => {
     const topics = data.topics || ["java", "rest", "go"];
     topics.forEach(renderTopic);
   });
@@ -141,11 +168,11 @@ function addTopic() {
   const topic = input.value.trim().toLowerCase();
   if (!topic) return;
 
-  chrome.storage.local.get(["topics"], (data) => {
+  chrome.storage.sync.get(["topics"], (data) => {
     let topics = data.topics || [];
     if (!topics.includes(topic)) {
       topics.push(topic);
-      chrome.storage.local.set({ topics }, () => {
+      chrome.storage.sync.set({ topics }, () => {
         renderTopic(topic);
         input.value = "";
       });

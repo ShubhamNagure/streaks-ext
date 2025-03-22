@@ -7,10 +7,24 @@
     "default_popup": "popup.html",
     "default_icon": "icon.png"
   },
-  "permissions": ["storage", "notifications", "alarms"],
+  "oauth2": {
+    "client_id": "YOUR-CLIENT-ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/spreadsheets"
+    ]
+  },
+  "permissions": [
+    "identity",
+    "storage",
+    "notifications",
+    "alarms"
+  ],
   "background": {
     "service_worker": "background.js"
   },
+  "host_permissions": [
+    "https://sheets.googleapis.com/"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }

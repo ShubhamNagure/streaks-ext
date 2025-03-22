@@ -182,6 +182,57 @@ function addTopic() {
   });
 }
 
+
+const SHEET_ID = "SHEET ID FORM URL"; // From sheet URL
+const SHEET_RANGE = "A1"; // Top-left cell where backup starts
+
+function backupToGoogleSheet() {
+  chrome.identity.getAuthToken({ interactive: true }, (token) => {
+    if (chrome.runtime.lastError) {
+      alert("Auth failed: " + chrome.runtime.lastError.message);
+      return;
+    }
+
+    chrome.storage.sync.get(null, (data) => {
+      const topics = data.topics || [];
+      const rows = [];
+
+      topics.forEach(topic => {
+        const streak = data[`streak_${topic}`] || 0;
+        const lastMarked = data[`lastMarkedDate_${topic}`] || "N/A";
+        const history = JSON.stringify(data[`history_${topic}`] || []);
+        const totalDays = (data[`history_${topic}`] || []).length;
+
+        rows.push([topic, streak, lastMarked, totalDays, history]);
+      });
+
+      const requestBody = {
+        values: [["Topic", "Streak", "LastMarked", "TotalDays", "History JSON"], ...rows]
+      };
+
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_RANGE}?valueInputOption=RAW`, {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      })
+        .then(res => res.json())
+        .then(response => {
+          console.log("Backup successful", response);
+          alert("Backup to Google Sheet successful!");
+        })
+        .catch(err => {
+          console.error("Backup failed", err);
+          alert("Backup failed: " + err.message);
+        });
+    });
+  });
+}
+
+
 document.getElementById("addTopicButton").addEventListener("click", addTopic);
+document.getElementById("backupBtn").addEventListener("click", backupToGoogleSheet);
 
 loadTopics();

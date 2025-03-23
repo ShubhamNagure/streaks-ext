@@ -54,3 +54,5 @@ This Chrome extension helps you track daily learning streaks per topic (like "Ja
 ---
 
 Built for personal use, but open to contributions.
+
+![alt text](image.png)
